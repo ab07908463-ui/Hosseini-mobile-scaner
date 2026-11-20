@@ -9,9 +9,9 @@
 body{font-family:Arial;background:#f2f4f8;padding:15px}
 main{background:white;padding:18px;border-radius:12px;max-width:600px;margin:auto}
 button{padding:13px;margin:5px;background:#1769aa;color:white;border:0;border-radius:8px;font-size:16px}
-video{width:100%;background:#222;margin-top:12px}
+video{width:100%;max-height:420px;object-fit:contain;background:#222;margin-top:12px}
 input{box-sizing:border-box;width:100%;padding:12px;margin:8px 0}
-#status{padding:12px;background:#edf5fc;border-radius:8px}
+#status{padding:12px;background:#edf5fc;border-radius:8px;word-break:break-word}
 </style>
 </head>
 <body>
@@ -63,18 +63,39 @@ let controls = null;
 
 const video = document.getElementById('video');
 const status = document.getElementById('status');
+const start = document.getElementById('start');
+const stop = document.getElementById('stop');
 
-document.getElementById('start').onclick = async () => {
+start.onclick = async () => {
  try {
   if (!window.isSecureContext) {
-   status.textContent = 'لطفاً سایت را با لینک HTTPS باز کنید.';
+   status.textContent = 'لطفاً سایت را با HTTPS باز کنید.';
    return;
   }
 
+  if (controls) {
+   controls.stop();
+   controls = null;
+  }
+
   status.textContent = 'در حال فعال کردن دوربین...';
+  start.disabled = true;
+
+  const constraints = {
+   audio: false,
+   video: {
+    facingMode: { ideal: 'environment' },
+    width: { ideal: 1920 },
+    height: { ideal: 1080 },
+    frameRate: { ideal: 30 },
+    advanced: [
+     { focusMode: 'continuous' }
+    ]
+   }
+  };
 
   controls = await reader.decodeFromConstraints(
-   { video: { facingMode: 'environment' } },
+   constraints,
    video,
    (result, error) => {
     if (result) {
@@ -85,23 +106,30 @@ document.getElementById('start').onclick = async () => {
       document.getElementById('imei').value = value;
      }
 
-     status.textContent = 'کد با موفقیت خوانده شد: ' + value;
+     status.textContent = 'کد خوانده شد: ' + value;
     }
    }
   );
 
-  status.textContent = 'دوربین فعال است. بارکد را مقابل دوربین بگیرید.';
+  status.textContent =
+   'دوربین فعال است؛ بارکد را مقابل دوربین بگیرید.';
+
  } catch (e) {
-  status.textContent = 'خطای دوربین: ' + e.name + ' - ' + e.message;
+  status.textContent =
+   'خطای دوربین: ' + e.name + ' - ' + e.message;
+ } finally {
+  start.disabled = false;
  }
 };
 
-document.getElementById('stop').onclick = () => {
+stop.onclick = () => {
  if (controls) {
   controls.stop();
   controls = null;
  }
+ video.srcObject = null;
  status.textContent = 'دوربین متوقف شد.';
+ start.disabled = false;
 };
 </script>
 </body>
