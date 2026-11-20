@@ -4,19 +4,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>اسکن مبایل‌فروشی حسینی</title>
+<title>اسکن موبایل‌فروشی حسینی</title>
 <style>
 body{font-family:Arial;background:#f2f4f8;padding:15px}
 main{background:white;padding:18px;border-radius:12px;max-width:600px;margin:auto}
 button{padding:13px;margin:5px;background:#1769aa;color:white;border:0;border-radius:8px;font-size:16px}
+button:disabled{opacity:.5}
 video{width:100%;max-height:420px;object-fit:contain;background:#222;margin-top:12px}
 input{box-sizing:border-box;width:100%;padding:12px;margin:8px 0}
 #status{padding:12px;background:#edf5fc;border-radius:8px;word-break:break-word}
+table{width:100%;border-collapse:collapse;margin-top:15px;font-size:13px}
+td,th{border:1px solid #ddd;padding:7px;text-align:center}
 </style>
 </head>
 <body>
 <main>
-<h2>مبایل‌فروشی حسینی</h2>
+<h2>موبایل‌فروشی حسینی</h2>
 <p>اسکن بارکد و IMEI موبایل</p>
 
 <button id="start">شروع اسکن دوربین</button>
@@ -52,6 +55,24 @@ input{box-sizing:border-box;width:100%;padding:12px;margin:8px 0}
 <label>قیمت خرید:</label>
 <input id="cost" type="number">
 
+<button id="lookup">گرفتن اطلاعات موبایل</button>
+<button id="add">اضافه کردن</button>
+
+<h3>موبایل‌های ثبت‌شده</h3>
+<div style="overflow-x:auto">
+<table>
+<thead>
+<tr>
+<th>IMEI</th>
+<th>شرکت</th>
+<th>مدل</th>
+<th>تعداد</th>
+<th>قیمت خرید</th>
+</tr>
+</thead>
+<tbody id="records"></tbody>
+</table>
+</div>
 </main>
 
 <script type="module">
@@ -88,9 +109,7 @@ start.onclick = async () => {
     width: { ideal: 1920 },
     height: { ideal: 1080 },
     frameRate: { ideal: 30 },
-    advanced: [
-     { focusMode: 'continuous' }
-    ]
+    advanced: [{ focusMode: 'continuous' }]
    }
   };
 
@@ -115,8 +134,7 @@ start.onclick = async () => {
    'دوربین فعال است؛ بارکد را مقابل دوربین بگیرید.';
 
  } catch (e) {
-  status.textContent =
-   'خطای دوربین: ' + e.name + ' - ' + e.message;
+  status.textContent = 'خطای دوربین: ' + e.name + ' - ' + e.message;
  } finally {
   start.disabled = false;
  }
@@ -131,6 +149,88 @@ stop.onclick = () => {
  status.textContent = 'دوربین متوقف شد.';
  start.disabled = false;
 };
+
+// ذخیره اطلاعات در مرورگر
+const fields = [
+ 'code','company','model','ram',
+ 'storage','imei','color','qty','cost'
+];
+
+function getRecords(){
+ try {
+  return JSON.parse(localStorage.getItem('hosseiniRecords') || '[]');
+ } catch(e) {
+  return [];
+ }
+}
+
+function showRecords(){
+ const records = getRecords();
+ document.getElementById('records').innerHTML = '';
+
+ records.forEach(item => {
+  const tr = document.createElement('tr');
+
+  [item.imei,item.company,item.model,item.qty,item.cost]
+   .forEach(value => {
+    const td = document.createElement('td');
+    td.textContent = value || '';
+    tr.appendChild(td);
+   });
+
+  document.getElementById('records').appendChild(tr);
+ });
+}
+
+document.getElementById('add').onclick = () => {
+ const item = {};
+
+ fields.forEach(id => {
+  item[id] = document.getElementById(id).value.trim();
+ });
+
+ if (!item.imei && !item.code) {
+  status.textContent = 'لطفاً اول IMEI یا بارکد را وارد کنید.';
+  return;
+ }
+
+ const records = getRecords();
+ records.push(item);
+
+ try {
+  localStorage.setItem('hosseiniRecords', JSON.stringify(records));
+  showRecords();
+  status.textContent = 'اطلاعات با موفقیت در این مرورگر ثبت شد.';
+
+  fields.forEach(id => {
+   if(id !== 'qty') document.getElementById(id).value = '';
+  });
+  document.getElementById('qty').value = '1';
+
+ } catch(e) {
+  status.textContent = 'ذخیره اطلاعات انجام نشد.';
+ }
+};
+
+// جست‌وجوی مشخصات بر اساس IMEI
+document.getElementById('lookup').onclick = () => {
+ const imei = document.getElementById('imei').value.trim()
+  || document.getElementById('code').value.trim();
+
+ if (!imei) {
+  status.textContent = 'اول IMEI موبایل را اسکن کنید.';
+  return;
+ }
+
+ const url = 'https://www.google.com/search?q=' +
+  encodeURIComponent('phone model specifications IMEI ' + imei);
+
+ window.open(url, '_blank');
+ status.textContent =
+  'نتایج جست‌وجوی IMEI باز شد. مشخصات را بررسی کنید.';
+};
+
+showRecords();
 </script>
 </body>
 </html>
