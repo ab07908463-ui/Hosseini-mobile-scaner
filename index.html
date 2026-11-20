@@ -1,0 +1,108 @@
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>اسکن مبایل‌فروشی حسینی</title>
+<style>
+body{font-family:Arial;background:#f2f4f8;padding:15px}
+main{background:white;padding:18px;border-radius:12px;max-width:600px;margin:auto}
+button{padding:13px;margin:5px;background:#1769aa;color:white;border:0;border-radius:8px;font-size:16px}
+video{width:100%;background:#222;margin-top:12px}
+input{box-sizing:border-box;width:100%;padding:12px;margin:8px 0}
+#status{padding:12px;background:#edf5fc;border-radius:8px}
+</style>
+</head>
+<body>
+<main>
+<h2>مبایل‌فروشی حسینی</h2>
+<p>اسکن بارکد و IMEI موبایل</p>
+
+<button id="start">شروع اسکن دوربین</button>
+<button id="stop">توقف دوربین</button>
+
+<video id="video" autoplay playsinline muted></video>
+<p id="status">آماده اسکن</p>
+
+<label>کد خوانده‌شده:</label>
+<input id="code" placeholder="بارکد یا IMEI">
+
+<label>نام شرکت:</label>
+<input id="company" placeholder="Samsung">
+
+<label>مدل موبایل:</label>
+<input id="model">
+
+<label>RAM:</label>
+<input id="ram">
+
+<label>حافظه:</label>
+<input id="storage">
+
+<label>IMEI:</label>
+<input id="imei">
+
+<label>رنگ:</label>
+<input id="color">
+
+<label>تعداد:</label>
+<input id="qty" type="number" value="1">
+
+<label>قیمت خرید:</label>
+<input id="cost" type="number">
+
+</main>
+
+<script type="module">
+import { BrowserMultiFormatReader }
+from 'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/+esm';
+
+const reader = new BrowserMultiFormatReader();
+let controls = null;
+
+const video = document.getElementById('video');
+const status = document.getElementById('status');
+
+document.getElementById('start').onclick = async () => {
+ try {
+  if (!window.isSecureContext) {
+   status.textContent = 'لطفاً سایت را با لینک HTTPS باز کنید.';
+   return;
+  }
+
+  status.textContent = 'در حال فعال کردن دوربین...';
+
+  controls = await reader.decodeFromConstraints(
+   { video: { facingMode: 'environment' } },
+   video,
+   (result, error) => {
+    if (result) {
+     const value = result.getText();
+     document.getElementById('code').value = value;
+
+     if (/^\d{14,16}$/.test(value)) {
+      document.getElementById('imei').value = value;
+     }
+
+     status.textContent = 'کد با موفقیت خوانده شد: ' + value;
+    }
+   }
+  );
+
+  status.textContent = 'دوربین فعال است. بارکد را مقابل دوربین بگیرید.';
+ } catch (e) {
+  status.textContent = 'خطای دوربین: ' + e.name + ' - ' + e.message;
+ }
+};
+
+document.getElementById('stop').onclick = () => {
+ if (controls) {
+  controls.stop();
+  controls = null;
+ }
+ status.textContent = 'دوربین متوقف شد.';
+};
+</script>
+</body>
+</html>
